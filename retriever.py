@@ -5,11 +5,11 @@ import json
 
 def load_datasets(lang):
     ds1 = load_dataset("JRQi/Global-MMLU-emb", lang)
-    ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", lang, split='train', streaming=True)
-    # ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", "de", split='train')
+    # ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", lang, split='train', streaming=True)
+    ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", "de", split='train')
     return ds1['test'], ds2
 
-def retriever(questions, corpus, query_number):
+def retriever(questions, corpus):
 
     # co = cohere.Client("sr9NmsYnrQ2byCGENpTNy0m0mMyXgbcEJC7XXEYY")
 
@@ -17,20 +17,21 @@ def retriever(questions, corpus, query_number):
     top_k = 3
 
     # Load at max 1000 chunks + embeddings
-    max_docs = 100000
-    docs = []
-    doc_embeddings = []
-    for doc in corpus:
-        docs.append(doc)
-        doc_embeddings.append(doc['emb'])
-        if len(docs) >= max_docs:
-            break
-    doc_embeddings = np.asarray(doc_embeddings)
+    # max_docs = 100000
+    # docs = []
+    # doc_embeddings = []
+    # for doc in corpus:
+    #     docs.append(doc)
+    #     doc_embeddings.append(doc['emb'])
+    #     if len(docs) >= max_docs:
+    #         break
+    # doc_embeddings = np.asarray(doc_embeddings)
+    doc_embeddings = np.asarray(corpus['emb'])
 
     output_list = {}
 
 
-    for i in range(query_number):
+    for i in range(len(questions)):
         question_id = (questions[i]['id'])
         print(question_id)
         query = questions[i]['question']
@@ -60,10 +61,8 @@ def main():
     lang = "es"
     questions, corpus = load_datasets(lang)
 
-    # Nuber of queries
-    query_number = 2
 
-    output = retriever(questions, corpus, query_number)
+    output = retriever(questions, corpus)
     with open('data.json', 'w') as f:
       json.dump(output, f)
 
