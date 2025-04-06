@@ -6,10 +6,6 @@ from datasets import load_dataset
 
 
 def load_model(model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"):
-    """
-    Loads a Hugging Face model & tokenizer.
-    You may need trust_remote_code=True if the model uses custom code.
-    """
     config = transformers.AutoConfig.from_pretrained(model_name, trust_remote_code=True)
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_name, use_fast=True, trust_remote_code=True
