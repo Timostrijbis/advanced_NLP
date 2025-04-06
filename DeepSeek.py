@@ -5,7 +5,7 @@ from tqdm import tqdm
 from datasets import load_dataset
 
 
-def load_model(model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"):
+def load_model(model_name="meta-llama/Meta-Llama-3-8B-Instruct"):
     config = transformers.AutoConfig.from_pretrained(model_name, trust_remote_code=True)
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_name, use_fast=True, trust_remote_code=True
@@ -36,23 +36,8 @@ def retrieve_context(sample_id, passages_dict):
 
 def build_prompt(question_text, option_a, option_b, option_c, option_d, context):
 
-    example = """Example:
-Question: Which planet is known as the Red Planet?
-Context: [Here it says that Mars is the Red Planet]
-Options:
-A) Jupiter
-B) Mars
-C) Saturn
-D) Venus
-Answer: B
---END-EXAMPLE--
-
-"""
-
-    # Our actual question
     prompt = (
-        example
-        + "Now here is the new question:\n\n"
+        f"You are a professional Turkish AI assistant. Use only the information from the context below to answer the question.\n"
         + f"Question:\n{question_text}\n\n"
         + f"Context:\n{context}\n\n"
         + f"Options:\n"
@@ -65,14 +50,14 @@ Answer: B
     return prompt
 
 
-def generate_raw_text(prompt, model, tokenizer, device, max_new_tokens=50):
+def generate_raw_text(prompt, model, tokenizer, device, max_new_tokens=10):
+
     inputs = tokenizer(prompt, return_tensors='pt').to(device)
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
-            # We do some sampling:
-            temperature=0.7,
+            temperature=0.1,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id,
             eos_token_id=tokenizer.eos_token_id
@@ -85,23 +70,26 @@ import re
 def extract_letter(answer_text):
     # find the last occurrence of "Answer:"
     # and extract what comes *after* that
-    pattern = r"(?i)answer:\s*([ABCD])\b"
+    pattern = r'\bAnswer:\s*([A-D])(?:\)|\.|$|\s)'
     match = re.search(pattern, answer_text)
     if match:
         return match.group(1).upper()  # A, B, C, or D
-    return "UNKNOWN"
+
+    # If no match is found
+    first_letter_match = re.search(r'\b[A-D]\b', answer_text)
+    if first_letter_match:
+        return first_letter_match.group(0).upper()  # A, B, C, or D
+
 
 
 def check_correctness(pred_choice, gold_letter):
-    """
-    If predicted letter == gold_letter, it's correct.
-    """
+
     return (pred_choice == gold_letter.upper())
 
 
 def main():
 
-    model, tokenizer, device = load_model("deepseek-ai/DeepSeek-R1-Distill-Qwen-7B")
+    model, tokenizer, device = load_model("meta-llama/Meta-Llama-3-8B-Instruct")
     dataset = load_dataset("CohereForAI/Global-MMLU", "tr", split="test")
     passages_dict = read_passages("Turkisch.json")
 
@@ -122,21 +110,21 @@ def main():
             continue
         context = retrieve_context(sample_id, passages_dict)
 
-        # Build the prompt 
+        # Build the prompt
         prompt = build_prompt(question_text, option_a, option_b, option_c, option_d, context)
 
         # raw text for check
-        raw_model_output = generate_raw_text(prompt, model, tokenizer, device, max_new_tokens=250)
+        raw_model_output = generate_raw_text(prompt, model, tokenizer, device, max_new_tokens=10)
 
         last_answer_idx = raw_model_output.rfind("Answer:")
         if last_answer_idx != -1:
             substring_after_answer = raw_model_output[last_answer_idx+len("Answer:"):].strip()
         else:
-            substring_after_answer = raw_model_output  
+            substring_after_answer = raw_model_output
 
         predicted_letter = extract_letter(substring_after_answer)
 
-        # Evaluate 
+        # Evaluate
         is_correct = check_correctness(predicted_letter, gold_answer)
         if is_correct:
             correct_count += 1
@@ -171,7 +159,7 @@ def main():
     print(f"Correct answers: {correct_count}")
     print(f"Accuracy: {accuracy:.2%}")
 
-    # Save 
+    # Save
     with open("global_mmlu_mc_results.json", "w", encoding="utf-8") as f_out:
         json.dump(results, f_out, ensure_ascii=False, indent=2)
     print("Results saved to global_mmlu_mc_results.json")
