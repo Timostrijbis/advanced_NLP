@@ -66,11 +66,6 @@ Answer: B
 
 
 def generate_raw_text(prompt, model, tokenizer, device, max_new_tokens=50):
-    """
-    We'll decode up to 50 tokens after "Answer:" so the model can produce a new,
-    separate answer from the example.
-    We use do_sample=True with some temperature to avoid it always repeating "A".
-    """
     inputs = tokenizer(prompt, return_tensors='pt').to(device)
     with torch.no_grad():
         outputs = model.generate(
