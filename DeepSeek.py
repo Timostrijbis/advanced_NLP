@@ -27,35 +27,18 @@ def load_model(model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"):
 
 
 def read_passages(passages_file):
-    """
-    The JSON might look like:
-    {
-      "abstract_algebra/test/0": ["line0_1", "line0_2", ...],
-      "abstract_algebra/test/1": [...],
-      ...
-    }
-    """
     with open(passages_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data
 
 
 def retrieve_context(sample_id, passages_dict):
-    """
-    If sample_id in dictionary, join the lines with newlines.
-    Else return empty string.
-    """
     if sample_id in passages_dict:
         return "\n".join(passages_dict[sample_id])
     return ""
 
 
 def build_prompt(question_text, option_a, option_b, option_c, option_d, context):
-    """
-    - Provide a short example (few-shot) that ends with a delimiter
-    - Then present the new question with "Answer:" at the end
-    """
-
 
     example = """Example:
 Question: Which planet is known as the Red Planet?
