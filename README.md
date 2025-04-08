@@ -21,5 +21,5 @@ WARNING: Choosing a language with a large number of wiipedia documents will requ
 
 4. Run the generator
 
-*python deepseek.py
+*python llama.py
 If you have changed the language from Hausa to another language, you need to change the name of the file from ha.json to the correct file name in line 93

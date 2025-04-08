@@ -1,11 +1,10 @@
 from datasets import load_dataset
 import numpy as np
 import json
-# import cohere
 
 def load_datasets(lang):
     ds1 = load_dataset("JRQi/Global-MMLU-emb", lang)
-    ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", lang, split='train', streaming=True)
+    ds2 = load_dataset("Cohere/wikipedia-2023-11-embed-multilingual-v3", lang, split='train', streaming=True) # Load the dataset in streaming mode
     return ds1['test'], ds2
 
 def retriever(questions, corpus):
